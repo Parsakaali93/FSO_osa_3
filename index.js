@@ -1,10 +1,30 @@
 const express = require('express')
+const morgan = require('morgan')
 const app = express()
+
+// yksinkertainen middleware, joka tulostaa 
+// konsoliin palvelimelle tulevien pyyntöjen perustietoja.
+/*const requestLogger = (request, response, next) => {
+  console.log('Method:', request.method)
+  console.log('Path:  ', request.path)
+  console.log('Body:  ', request.body)
+  console.log('---')
+  next()
+}
+*/
 
 /*In Express.js, the body is not automatically parsed by default,
 so you need to use middleware like express.json() to parse the
 incoming request body. (in a POST request)*/
 app.use(express.json())
+
+/* Middlewaret suoritetaan siinä järjestyksessä, jossa ne on otettu
+ käyttöön sovellusolion metodilla use. Huomaa, että json-parseri
+tulee ottaa käyttöön ennen middlewarea requestLogger,
+muuten request.body ei ole vielä alustettu loggeria suoritettaessa! */
+//app.use(requestLogger)
+
+app.use(morgan('tiny'))
 
 let contacts = [
       {
@@ -119,6 +139,14 @@ app.delete('/api/persons/:id', (request, response) => {
   // vastataan statuskoodilla 204 no content sillä mukaan ei lähetetä mitään dataa.
   response.status(204).end()
 })
+
+// Lisätään routejen jälkeen seuraava middleware, jonka ansiosta
+// saadaan routejen käsittelemättömistä virhetilanteista JSON-muotoinen virheilmoitus:
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' })
+}
+
+app.use(unknownEndpoint)
 
 
 const PORT = 3001
