@@ -1,7 +1,7 @@
-POST http://localhost:3001/api/persons/
+POST https://fso-osa-3.onrender.com/api/persons
 content-type: application/json
 
 {
-    "name": "Uga Naag",
+    "name": "Iso kisu",
     "number": "4444"
 }

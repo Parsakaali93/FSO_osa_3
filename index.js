@@ -15,6 +15,8 @@ app.use(cors())
 }
 */
 
+app.use(express.static('dist'))
+
 /*In Express.js, the body is not automatically parsed by default,
 so you need to use middleware like express.json() to parse the
 incoming request body. (in a POST request)*/
