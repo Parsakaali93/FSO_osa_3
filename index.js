@@ -1,9 +1,14 @@
 const express = require('express')
 const morgan = require('morgan')
+const mongoose = require('mongoose')
+
+const Contact = require('./models/contact')
+
 const app = express()
 const cors = require('cors')
 
 app.use(cors())
+
 // yksinkertainen middleware, joka tulostaa 
 // konsoliin palvelimelle tulevien pyyntöjen perustietoja.
 /*const requestLogger = (request, response, next) => {
@@ -55,8 +60,11 @@ let contacts = [
   
 
 app.get('/api/persons', (req, res) => {
-res.json(contacts)
+  Contact.find({}).then(contacts => {
+    res.json(contacts)
+  })
 })
+
 
 app.get('/api/persons/:id', (request, response) => {
   const id = Number(request.params.id)
@@ -123,11 +131,16 @@ app.post('/api/persons', (request, response) => {
     })
   }
 
-  const contact = {
+  const contact = new Contact ({
     name: body.name,
     number: body.number,
     id: getRandomInt(2000000000),
-  }
+  })
+
+  contact.save().then(result => {
+    console.log(`Added ${body.name} ${body.number} to the phonebook`)
+    mongoose.connection.close()
+  })
 
   contacts = contacts.concat(contact)
 
