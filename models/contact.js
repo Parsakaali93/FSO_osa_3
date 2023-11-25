@@ -1,14 +1,15 @@
 
 
 const mongoose = require('mongoose')
-const config = require('../config.json');
+// const config = require('../config.json');
+require('dotenv').config()
 
 // ÄLÄ KOSKAAN TALLETA SALASANOJA GitHubiin!
-const url = config.mongodb.url
-
+const url = process.env.MONGODB_URI
 
 mongoose.set('strictQuery',false)
 mongoose.connect(url)
+
 .then(result => {
   console.log('connected to MongoDB')
 })

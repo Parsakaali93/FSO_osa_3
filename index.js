@@ -1,3 +1,5 @@
+require('dotenv').config()
+
 const express = require('express')
 const morgan = require('morgan')
 const mongoose = require('mongoose')
@@ -177,7 +179,7 @@ const errorHandler = (error, req, res, next) => {
   next(error)
 }
 
-const PORT = 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
