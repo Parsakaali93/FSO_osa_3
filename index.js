@@ -59,32 +59,33 @@ let contacts = [
     ]
   
 
+// KAIKKIEN KONTAKTIEN KATSOMINEN
 app.get('/api/persons', (req, res) => {
   Contact.find({}).then(contacts => {
     res.json(contacts)
   })
 })
 
+// YKSITTÄISEN KONTAKTIN KATSOMINEN
+app.get('/api/persons/:id', (request, response, next) => {
 
-app.get('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
+  const contact = Contact.findById(request.params.id)
+  .then(contact => {
+    if(contact)
+    {
+      response.json(contact)
+    }
 
-  const contact = contacts.find(contact => {
-    return contact.id === id
-  })
+    // Jos id:llä ei löydy notea lähetetään 404 error
+    else
+    {
+      // Koska vastaukseen ei nyt liity mitään dataa, käytetään statuskoodin asettavan
+      // metodin status lisäksi metodia end ilmoittamaan siitä, että pyyntöön tulee vastata ilman dataa.
+      response.status(404).end()
+    }}
+  )
+  .catch(error => next(error))
 
-  if(contact)
-  {
-    response.json(contact)
-  }
-
-  // Jos id:llä ei löydy notea lähetetään 404 error
-  else
-  {
-    // Koska vastaukseen ei nyt liity mitään dataa, käytetään statuskoodin asettavan
-    // metodin status lisäksi metodia end ilmoittamaan siitä, että pyyntöön tulee vastata ilman dataa.
-    response.status(404).end()
-  }
 })
 
 app.get('/info', (req, res) => {
@@ -104,32 +105,24 @@ function doesPersonExist(name) {
 }
 
 // Kontaktin lisääminen tietokantaan POST metodilla
-app.post('/api/persons', (request, response) => {
+app.post('/api/persons', (request, response, next) => {
   const body = request.body
 
-  // We require the content field to not be empty
-  if (!body.name) {
-    // Return is important, otherwise the function will
-    // continue and post the note into the database
-    return response.status(400).json({ 
-      error: 'no name' 
-    })
-  }
-
-  else if(doesPersonExist(body.name))
+  if(doesPersonExist(body.name))
   {
     return response.status(400).json({ 
       error: 'name not unique' 
     })
   }
 
+  /*
   else if (!body.number) {
     // Return is important, otherwise the function will
     // continue and post the note into the database
     return response.status(400).json({ 
       error: 'no number' 
     })
-  }
+  }*/
 
   const contact = new Contact ({
     name: body.name,
@@ -139,22 +132,25 @@ app.post('/api/persons', (request, response) => {
 
   contact.save().then(result => {
     console.log(`Added ${body.name} ${body.number} to the phonebook`)
-    mongoose.connection.close()
+    response.json(contact)
+
+    //mongoose.connection.close()
   })
-
-  contacts = contacts.concat(contact)
-
-  response.json(contact)
+  .catch(error=>next(error))
+  
 })
 
 // Poista kontakti puhelinluettelosta
-app.delete('/api/persons/:id', (request, response) => {
-  const id = Number(request.params.id)
-  contacts = contacts.filter(contact => contact.id !== id)
-
-  // Jos poisto onnistuu eli poistettava muistiinpano on olemassa,
+app.delete('/api/persons/:id', (request, response, next) => {
+  Contact.findByIdAndDelete(request.params.id)
+  .then(result => {
+      // Jos poisto onnistuu eli poistettava muistiinpano on olemassa,
   // vastataan statuskoodilla 204 no content sillä mukaan ei lähetetä mitään dataa.
-  response.status(204).end()
+    response.status(204).end()
+
+  })
+  .catch(error => next(error))
+
 })
 
 // Lisätään routejen jälkeen seuraava middleware, jonka ansiosta
@@ -163,10 +159,29 @@ const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
 
-app.use(unknownEndpoint)
+const errorHandler = (error, req, res, next) => {
+  if(error.stack.startsWith('CastError')){
+    return res.status(400).send({ error: 'Malformatted ID' })
+  }
 
+  else if(error.name === 'ValidationError')
+  {
+    return res.status(400).send({error: 'Validation Error'})
+  }
+
+  else
+  {
+    console.log(error)
+  }
+
+  next(error)
+}
 
 const PORT = 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+app.use(unknownEndpoint)
+
+app.use(errorHandler)
