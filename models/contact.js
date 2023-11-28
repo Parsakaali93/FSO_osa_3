@@ -2,7 +2,6 @@
 
 const mongoose = require('mongoose')
 // const config = require('../config.json');
-require('dotenv').config()
 
 // ÄLÄ KOSKAAN TALLETA SALASANOJA GitHubiin!
 const url = process.env.MONGODB_URI
